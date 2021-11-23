@@ -20,7 +20,7 @@ pub struct  Position{
     pub y : u32
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Player{
     pub id: u32,
     pub name : String,
@@ -38,6 +38,7 @@ impl Player {
             hp : BASE_HP
         }
     }
+    
 }
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone)]
@@ -74,11 +75,28 @@ pub struct Map{
 }
 
 
-fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_HEIGHT ], new_pos : Position){
-    match array[new_pos.x as usize][new_pos.y as usize] {
-        Case::Wall => {},
-        Case::Air => {current_player.pos = new_pos},
-        Case::Pick => {current_player.pos = new_pos},
+fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_HEIGHT ], new_pos : Position, players : Vec<Player>){
+    let player_on_position = players.iter().find(|id|id.pos.x == new_pos.x && id.pos.y == new_pos.y);
+
+    match player_on_position {
+        Some(_) => {},
+        None => {
+            match array[new_pos.x as usize][new_pos.y as usize] {
+                Case::Wall => {},
+                Case::Air => {current_player.pos = new_pos},
+                Case::Pick => {current_player.pos = new_pos},
+            }
+        },
+    }
+}
+
+fn attack_player(position_attack : Position, player_list : &mut Vec<Player>){
+    let player_attacked = player_list.iter_mut().find(|id|id.pos.x == position_attack.x && id.pos.y == position_attack.y);
+    match player_attacked{
+        Some(player) => {
+            player.hp = player.hp - 1;
+        },
+        None => {},
     }
 }
 
@@ -124,20 +142,30 @@ impl Map {
     fn run(&mut self){
         let mut already_play : Vec<u32> = Vec::new();
         
-        for p in self.attack_pile.iter(){
-            
+        for a in self.attack_pile.iter(){
+            let player = self.players.iter().find(|id| id.id == a.player_id).unwrap();
+
+            match a.direction{
+                Direction::Up => { attack_player(Position{x : player.pos.x, y : player.pos.y + 1},&mut self.players)},
+                Direction::Down => { attack_player(Position{x : player.pos.x, y : player.pos.y - 1},&mut self.players) },
+                Direction::Left => { attack_player(Position{x : player.pos.x - 1, y : player.pos.y},&mut self.players) },
+                Direction::Right => { attack_player(Position{x : player.pos.x + 1, y : player.pos.y},&mut self.players) },
+            }
         }
         
         for m in self.move_pile.iter(){
             if !already_play.contains(&m.player_id){
-                let player: &mut Player = self.players.get_mut(m.player_id as usize).unwrap();
+
+                let players = self.players.clone();
+                let player = self.players.iter_mut().find(|id| id.id == m.player_id).unwrap();
+
                 match m.direction{
-                    Direction::Up => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y + 1}) },
-                    Direction::Down => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y - 1}) },
-                    Direction::Left => { move_player(player, &self.array, Position{x : player.pos.x - 1, y : player.pos.y}) },
-                    Direction::Right => { move_player(player, &self.array, Position{x : player.pos.x + 1, y : player.pos.y}) },
+                    Direction::Up => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y + 1},players)},
+                    Direction::Down => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y - 1},players) },
+                    Direction::Left => { move_player(player, &self.array, Position{x : player.pos.x - 1, y : player.pos.y},players) },
+                    Direction::Right => { move_player(player, &self.array, Position{x : player.pos.x + 1, y : player.pos.y},players) },
                 }
-                println!("{}", serde_json::to_string(&player).unwrap());
+
                 already_play.push(m.player_id)
             }
         }
@@ -168,11 +196,41 @@ mod tests {
             direction: direction
         });
         game.run();
+        
+        let valid = expected.x == game.players[0].pos.x && expected.y == game.players[0].pos.y;
+
+        assert_eq!(valid ,true)
+    }
+
+    #[test_case(1,  1, Direction::Up  ; "Up test")]
+    fn player_movement_player_on_top(x : u32, y : u32, direction : Direction) {
+        let expected = Position{x : x, y : y};
+
+        let mut game = Map::new();
+        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
+        game.add_player(Player::new(1, "yugo".to_string(), Position { x: 1, y: 2 }));
+        game.adding_move(Move{
+            player_id: 0,
+            direction: direction
+        });
+        game.run();
 
         assert_eq!(game.players[0].pos.y,expected.y)
     }
 
-    fn player_attack(){
-        
+    #[test_case(Direction::Up, 2  ; "Up test")]
+    fn player_attack(direction : Direction, exepected : u32){
+
+        let mut game = Map::new();
+        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
+        game.add_player(Player::new(1, "yugo".to_string(), Position { x: 1, y: 2 }));
+        game.adding_attack( Attack{
+            player_id: 0,
+            direction: direction
+        });
+        game.run();
+
+        assert_eq!(game.players[1].hp ,exepected)
+
     }
 }
