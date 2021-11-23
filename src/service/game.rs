@@ -5,7 +5,7 @@ const BASE_HP : u32 = 3;
 const MAP_HEIGHT : usize = 25;
 const MAP_WIDTH : usize = 25;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 enum Direction {
     Up,
     Down,
@@ -14,7 +14,7 @@ enum Direction {
 }
 
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 pub struct  Position{
     pub x : u32,
     pub y : u32
@@ -47,13 +47,13 @@ pub enum Case{
     Air
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 pub struct Attack{
     player_id : u32,
     direction : Direction,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 pub struct Move{
     player_id : u32,
     direction : Direction,
@@ -76,9 +76,9 @@ pub struct Map{
 
 fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_HEIGHT ], new_pos : Position){
     match array[new_pos.x as usize][new_pos.y as usize] {
-        Wall => {},
-        Air => {current_player.pos = new_pos},
-        Pick => {current_player.pos = new_pos},
+        Case::Wall => {},
+        Case::Air => {current_player.pos = new_pos},
+        Case::Pick => {current_player.pos = new_pos},
     }
 }
 
@@ -87,8 +87,8 @@ impl Map {
     
     fn new() -> Map{
         let array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ] = [ [Case::Air; MAP_WIDTH] ; MAP_HEIGHT];
-
-
+        
+        
         Map{
             array : array,
             players : Vec::new(),
@@ -97,21 +97,82 @@ impl Map {
         }
     }
 
-    async fn run(&self){
-        let mut already_play : Vec<u32> = Vec::new();
+    fn add_player(&mut self, player : Player){
+        self.players.push(player);
+    }
 
-        for p in self.attack_pile.into_iter(){
-
+    fn adding_attack(&mut self, attack : Attack){
+        let already_attack = self.attack_pile.iter().find(|id|id.player_id == attack.player_id);
+        match already_attack{
+            Some(_) => {},
+            None => {
+                self.attack_pile.push(attack);
+            }
         }
+    }
 
-        for m in self.move_pile.into_iter(){
-            let mut player = &self.players[m.player_id as usize];
-            match m.direction{
-                Up => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y + 1}) },
-                Down => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y - 1}) },
+    fn adding_move(&mut self, movement : Move){
+        let already_move = self.move_pile.iter().find(|id|id.player_id == movement.player_id);
+        match already_move{
+            Some(_) => {},
+            None => {
+                self.move_pile.push(movement);
+            }
+        }
+    }
+    
+    fn run(&mut self){
+        let mut already_play : Vec<u32> = Vec::new();
+        
+        for p in self.attack_pile.iter(){
+            
+        }
+        
+        for m in self.move_pile.iter(){
+            if !already_play.contains(&m.player_id){
+                let player: &mut Player = self.players.get_mut(m.player_id as usize).unwrap();
+                match m.direction{
+                    Direction::Up => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y + 1}) },
+                    Direction::Down => { move_player(player, &self.array, Position{x : player.pos.x, y : player.pos.y - 1}) },
+                    Direction::Left => { move_player(player, &self.array, Position{x : player.pos.x - 1, y : player.pos.y}) },
+                    Direction::Right => { move_player(player, &self.array, Position{x : player.pos.x + 1, y : player.pos.y}) },
+                }
+                println!("{}", serde_json::to_string(&player).unwrap());
+                already_play.push(m.player_id)
             }
         }
 
+        self.attack_pile.clear();
+        self.move_pile.clear();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use test_case::test_case;
+
+    use super::*;
+
+
+    #[test_case(1,  2, Direction::Up  ; "Up test")]
+    #[test_case(1,  0, Direction::Down  ; "Down test")]
+    #[test_case(0,  1, Direction::Left  ; "Left test")]
+    #[test_case(2,  1, Direction::Right  ; "Right test")]
+    fn player_movement(x : u32, y : u32, direction : Direction) {
+        let expected = Position{x : x, y : y};
+
+        let mut game = Map::new();
+        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
+        game.adding_move(Move{
+            player_id: 0,
+            direction: direction
+        });
+        game.run();
+
+        assert_eq!(game.players[0].pos.y,expected.y)
     }
 
+    fn player_attack(){
+        
+    }
 }
