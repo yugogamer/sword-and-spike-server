@@ -6,8 +6,8 @@ const BASE_HP : u32 = 3;
 pub const MAP_HEIGHT : usize = 25;
 pub const MAP_WIDTH : usize = 25;
 
-#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
-enum Direction {
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, JsonSchema)]
+pub enum Direction {
     Up,
     Down,
     Left,
@@ -31,9 +31,9 @@ pub struct Player{
 
 impl Player {
     
-    pub fn new(id : u32, name : String, pos : Position) -> Player{
+    pub fn new(name : String, pos : Position) -> Player{
         Player{
-            id : id,
+            id : 0,
             name : name,
             pos : pos,
             hp : BASE_HP
@@ -72,7 +72,8 @@ pub struct Map{
     pub array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ],
     pub players :  Vec<Player>,
     pub attack_pile: Vec<Attack>,
-    pub move_pile : Vec<Move>
+    pub move_pile : Vec<Move>,
+    pub current_player_id : u32,
 }
 
 
@@ -112,12 +113,19 @@ impl Map {
             array : array,
             players : Vec::new(),
             attack_pile : Vec::new(),
-            move_pile : Vec::new()
+            move_pile : Vec::new(),
+            current_player_id : 0
         }
     }
 
     pub fn add_player(&mut self, player : Player){
-        self.players.push(player);
+        let mut current_player = player;
+
+        current_player.id = self.current_player_id;
+
+        self.players.push(current_player);
+
+        self.current_player_id += 1;
     }
 
     pub fn adding_attack(&mut self, attack : Attack){
@@ -191,7 +199,7 @@ mod tests {
         let expected = Position{x : x, y : y};
 
         let mut game = Map::new();
-        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
+        game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 1 }));
         game.adding_move(Move{
             player_id: 0,
             direction: direction
@@ -208,8 +216,8 @@ mod tests {
         let expected = Position{x : x, y : y};
 
         let mut game = Map::new();
-        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
-        game.add_player(Player::new(1, "yugo".to_string(), Position { x: 1, y: 2 }));
+        game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 1 }));
+        game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 2 }));
         game.adding_move(Move{
             player_id: 0,
             direction: direction
@@ -223,8 +231,8 @@ mod tests {
     fn player_attack(direction : Direction, exepected : u32){
 
         let mut game = Map::new();
-        game.add_player(Player::new(0, "yugo".to_string(), Position { x: 1, y: 1 }));
-        game.add_player(Player::new(1, "yugo".to_string(), Position { x: 1, y: 2 }));
+        game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 1 }));
+        game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 2 }));
         game.adding_attack( Attack{
             player_id: 0,
             direction: direction

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use rocket_okapi::okapi::schemars;
 use rocket_okapi::okapi::schemars::JsonSchema;
-use crate::service::game::{Case, MAP_HEIGHT, MAP_WIDTH, Player};
+use crate::service::game::{Case, MAP_HEIGHT, MAP_WIDTH, Player, Direction};
 
 
 
@@ -18,4 +18,8 @@ pub struct Connection{
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct Map{
     pub map : [[Case; MAP_WIDTH]; MAP_HEIGHT],
+}
+
+pub struct Move{
+    pub direction : Direction,
 }
