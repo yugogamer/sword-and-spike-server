@@ -14,5 +14,3 @@ keep_alive = 5
 read_timeout = 5
 write_timeout = 5
 log = "critical"
-secret_key = [randomly generated at launch]
-limits = { forms = 32768 }
