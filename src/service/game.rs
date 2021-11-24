@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
-use schemars::{schema_for, JsonSchema};
+use schemars::{JsonSchema};
 
 
 const BASE_HP : u32 = 3;
-const MAP_HEIGHT : usize = 25;
-const MAP_WIDTH : usize = 25;
+pub const MAP_HEIGHT : usize = 25;
+pub const MAP_WIDTH : usize = 25;
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 enum Direction {
@@ -42,7 +42,7 @@ impl Player {
     
 }
 
-#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, JsonSchema)]
 pub enum Case{
     Wall,
     Pick,
