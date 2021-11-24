@@ -19,6 +19,9 @@ async fn join_game(game : &State<Game>, player : Json<Connection>) -> Json<Curre
     let current_game = &mut *arc.lock().unwrap();
 
     current_game.add_player(Player::new(0, data.name, Position { x: 0, y: 0 }));
+    let player_list = current_game.players.clone();
+    drop(current_game);
+    drop(arc);
 
-    Json(CurrentPlayerList{data : current_game.players.clone()})
+    Json(CurrentPlayerList{data : player_list})
 }
