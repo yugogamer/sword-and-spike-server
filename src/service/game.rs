@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use schemars::{schema_for, JsonSchema};
 
 
 const BASE_HP : u32 = 3;
@@ -14,13 +15,13 @@ enum Direction {
 }
 
 
-#[derive(Debug, Deserialize, Serialize, Copy, Clone)]
+#[derive(Debug, Deserialize, Serialize, Copy, Clone, JsonSchema)]
 pub struct  Position{
     pub x : u32,
     pub y : u32
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, JsonSchema)]
 pub struct Player{
     pub id: u32,
     pub name : String,
@@ -68,10 +69,10 @@ pub enum Action{
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Map{
-    array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ],
-    players :  Vec<Player>,
-    attack_pile: Vec<Attack>,
-    move_pile : Vec<Move>
+    pub array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ],
+    pub players :  Vec<Player>,
+    pub attack_pile: Vec<Attack>,
+    pub move_pile : Vec<Move>
 }
 
 
@@ -103,7 +104,7 @@ fn attack_player(position_attack : Position, player_list : &mut Vec<Player>){
 
 impl Map {
     
-    fn new() -> Map{
+    pub fn new() -> Map{
         let array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ] = [ [Case::Air; MAP_WIDTH] ; MAP_HEIGHT];
         
         
@@ -115,11 +116,11 @@ impl Map {
         }
     }
 
-    fn add_player(&mut self, player : Player){
+    pub fn add_player(&mut self, player : Player){
         self.players.push(player);
     }
 
-    fn adding_attack(&mut self, attack : Attack){
+    pub fn adding_attack(&mut self, attack : Attack){
         let already_attack = self.attack_pile.iter().find(|id|id.player_id == attack.player_id);
         match already_attack{
             Some(_) => {},
@@ -129,7 +130,7 @@ impl Map {
         }
     }
 
-    fn adding_move(&mut self, movement : Move){
+    pub fn adding_move(&mut self, movement : Move){
         let already_move = self.move_pile.iter().find(|id|id.player_id == movement.player_id);
         match already_move{
             Some(_) => {},
@@ -139,7 +140,7 @@ impl Map {
         }
     }
     
-    fn run(&mut self){
+    pub fn run(&mut self){
         let mut already_play : Vec<u32> = Vec::new();
         
         for a in self.attack_pile.iter(){
