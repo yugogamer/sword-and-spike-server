@@ -4,7 +4,6 @@ use rocket::{State, serde::{json::Json}};
 use rocket_okapi::{openapi, openapi_get_routes};
 use crate::Game;
 use crate::Position;
-use crate::ServicePlayer;
 
 pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     let settings = rocket_okapi::settings::OpenApiSettings::new();

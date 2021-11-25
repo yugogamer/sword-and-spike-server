@@ -29,7 +29,7 @@ async fn main() -> Result<(), rocket::Error> {
     let game = Game {game : RwLock::new(service::game::Map::new())};
 
     let loader = rocket::build();
-    let loader = controlleur::game::load_road(loader).manage(game).manage(service_player).register("/",catchers![not_found]);
+    let loader = controlleur::game::load_road(loader).manage(game).register("/",catchers![not_found]);
 
     let loader = loader.mount(
         "/doc/",
