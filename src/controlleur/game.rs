@@ -14,19 +14,15 @@ pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocke
 /// # add a player to the game
 #[openapi]
 #[post("/join", format = "json", data = "<player>")]
-async fn join_game(game : &State<Game>, players : &State<ServicePlayer>, player : Json<Connection>) -> Json<Player> {
-    let data = player.into_inner();
-    let arc = &game.inner().game;
-    let current_game = &mut *arc.lock().unwrap();
+async fn join_game(game : &State<Game>, player : Json<Connection>) -> Json<Player> {
+    let mut map = game.inner().game.write().unwrap();
+    let player_name = player;
 
-    current_game.add_player(Player::new(data.name, Position { x: 0, y: 0 }));
-    let players = &players.inner().players;
-    let players = current_game.players.clone();
-    let player_list = Clone::clone(players.last().unwrap());
-    drop(current_game);
-    drop(arc);
-
-    Json(player_list)
+    let new_player = Player::new(player_name.name.clone(), Position { x: 0, y: 0 });
+    let response_player = new_player.clone();
+    map.add_player(new_player);
+    drop(map);
+    return Json(response_player);
 }
 
 
@@ -34,12 +30,10 @@ async fn join_game(game : &State<Game>, players : &State<ServicePlayer>, player 
 #[openapi]
 #[get("/player_list")]
 async fn get_player_list(game : &State<Game>) -> Json<CurrentPlayerList> {
-    let arc = &game.inner().game;
-    let current_game = &mut *arc.lock().unwrap();
+    let current_game = game.inner().game.read().unwrap();
 
     let player_list = current_game.players.clone();
     drop(current_game);
-    drop(arc);
 
     Json(CurrentPlayerList{data : player_list})
 }
@@ -48,12 +42,10 @@ async fn get_player_list(game : &State<Game>) -> Json<CurrentPlayerList> {
 #[openapi]
 #[get("/get_map")]
 async fn get_map(game : &State<Game>) -> Json<Map> {
-    let arc = &game.inner().game;
-    let current_game = &mut *arc.lock().unwrap();
+    let current_game = game.inner().game.read().unwrap();
 
     let map = current_game.array.clone();
     drop(current_game);
-    drop(arc);
 
     Json(Map{map : map})
 }
@@ -62,10 +54,5 @@ async fn get_map(game : &State<Game>) -> Json<Map> {
 #[openapi]
 #[post("/move", format = "json", data = "<movement>")]
 async fn move_player(game : &State<Game>, movement : Json<Direction> ) {
-    let arc = &game.inner().game;
-    let current_game = &mut *arc.lock().unwrap();
-
-    
-    drop(current_game);
-    drop(arc);
+    let mut current_game = game.inner().game.write().unwrap();
 }

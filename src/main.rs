@@ -4,6 +4,7 @@ use service::game::Player;
 use crate::service::game::{Position};
 use std::sync::{Arc, Mutex};
 use rocket::Request;
+use std::sync::RwLock;
 
 mod service;
 mod controlleur;
@@ -17,19 +18,15 @@ fn not_found(req: &Request) -> String {
 
 
 struct Game {
-    game : Arc<Mutex<service::game::Map>>
+    pub game : RwLock<service::game::Map>
 }
 
-struct ServicePlayer {
-    players : Vec<Player>
-}
 
 
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-    let game = Game {game : Arc::from(Mutex::new(service::game::Map::new()))};
-    let service_player = ServicePlayer{players : Vec::new()};
+    let game = Game {game : RwLock::new(service::game::Map::new())};
 
     let loader = rocket::build();
     let loader = controlleur::game::load_road(loader).manage(game).manage(service_player).register("/",catchers![not_found]);
