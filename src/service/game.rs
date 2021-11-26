@@ -2,9 +2,12 @@ use serde::{Deserialize, Serialize};
 use schemars::{JsonSchema};
 
 
-const BASE_HP : u32 = 3;
+const BASE_HP : i32 = 3;
 pub const MAP_HEIGHT : usize = 25;
 pub const MAP_WIDTH : usize = 25;
+
+const SPIKE_DOMMAGE : u32 = 1;
+const PLAYER_DOMMAGE : u32 = 1;
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, JsonSchema)]
 pub enum Direction {
@@ -12,6 +15,12 @@ pub enum Direction {
     Down,
     Left,
     Right
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, JsonSchema, PartialEq)]
+pub enum PlayerState{
+    Alive,
+    Dead,
 }
 
 
@@ -25,8 +34,9 @@ pub struct  Position{
 pub struct Player{
     pub id: u32,
     pub name : String,
-    pub hp : u32,
-    pub pos : Position
+    pub hp : i32,
+    pub pos : Position,
+    pub state : PlayerState
 }
 
 impl Player {
@@ -36,7 +46,15 @@ impl Player {
             id : 0,
             name : name,
             pos : pos,
-            hp : BASE_HP
+            hp : BASE_HP,
+            state : PlayerState::Alive
+        }
+    }
+
+    pub fn take_dommage(&mut self, dommage : i32){
+        self.hp -= dommage;
+        if self.hp <= 0 {
+            self.state = PlayerState::Dead;
         }
     }
     
@@ -76,7 +94,7 @@ fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_
         return
     }
 
-    let player_on_position = players.iter().find(|id|id.pos.x == new_pos.x && id.pos.y == new_pos.y);
+    let player_on_position = players.iter().find(|id|id.pos.x == new_pos.x && id.pos.y == new_pos.y && id.state == PlayerState::Alive);
 
     match player_on_position {
         Some(_) => {},
@@ -84,17 +102,20 @@ fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_
             match array[new_pos.x as usize][new_pos.y as usize] {
                 Case::Wall => {},
                 Case::Air => {current_player.pos = new_pos},
-                Case::Pick => {current_player.pos = new_pos},
+                Case::Pick => {
+                    current_player.pos = new_pos;
+                    current_player.take_dommage(SPIKE_DOMMAGE as i32);
+                },
             }
         },
     }
 }
 
 fn attack_player(position_attack : Position, player_list : &mut Vec<Player>){
-    let player_attacked = player_list.iter_mut().find(|id|id.pos.x == position_attack.x && id.pos.y == position_attack.y);
+    let player_attacked = player_list.iter_mut().find(|id|id.pos.x == position_attack.x && id.pos.y == position_attack.y && id.state == PlayerState::Alive);
     match player_attacked{
         Some(player) => {
-            player.hp = player.hp - 1;
+            player.take_dommage(PLAYER_DOMMAGE as i32)
         },
         None => {},
     }
@@ -226,7 +247,7 @@ mod tests {
     }
 
     #[test_case(Direction::Up, 2  ; "Up test")]
-    fn player_attack(direction : Direction, exepected : u32){
+    fn player_attack(direction : Direction, exepected : i32){
 
         let mut game = Map::new();
         game.add_player(Player::new("yugo".to_string(), Position { x: 1, y: 1 }));
