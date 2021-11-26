@@ -2,12 +2,11 @@ use rocket::http::Status;
 use rocket::outcome::Outcome;
 use rocket::request::{self, Request, FromRequest};
 use rocket::State;
-use crate::entity::user::ClientConnection;
-use crate::service::service_user;
-use crate::service::database::Database;
-use tokio_postgres::Client;
-use sha256::digest;
 use std::error::Error;
+
+use crate::Game;
+
+use super::game::Player;
 
 pub struct SessionId(u32);
 
@@ -20,28 +19,39 @@ pub enum SessionIdError{
     Invalid,
 }
 
+fn is_valid_id(id : &u32, players : &Vec<Player>) -> bool{
+    let player = players.iter().find(|player_id| *id == player_id.id);
+    match player{
+        Some(_) => return true,
+        None => return false,
+    }
+}
+
+
 #[rocket::async_trait]
 impl<'r> FromRequest<'r> for SessionId{
     type Error = SessionIdError;
-
+    
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        let session_id : Vec<_> = req.headers().get("session-id").collect();
         let cookie = req.cookies().get("session-id").map(|c| format!("{}", c.value()));
-
+        let current_user_list = &*req.guard::<&State<Game>>().await.unwrap().inner().game.read().unwrap();
+        let current_players = current_user_list.players.clone();
+        drop(current_user_list);
+        
         if cookie.is_some(){
-            let value = cookie.unwrap();
-            if is_valid_id(&value[..]) {
-                return Outcome::Success(SessionId(value));
-            }else {
-                return Outcome::Failure((Status::new(403), SessionIdError::Invalid));
+            let value = cookie.unwrap().parse::<u32>();
+            match value {
+                Ok(id) => {
+                    if is_valid_id(&id, &current_players){
+                        return Outcome::Success(SessionId(id));
+                    }else {
+                        return Outcome::Failure((Status::Forbidden, SessionIdError::Invalid));
+                    }
+                },
+                Err(_) => return Outcome::Failure((Status::Forbidden, SessionIdError::BadCout)),
             }
-        }
-
-        match session_id.len(){
-            0 => Outcome::Failure((Status::BadRequest, SessionIdError::Missing)),
-            1 if is_valid_id(session_id[0]) => Outcome::Success(SessionId(session_id[0].to_string())),
-            1 => Outcome::Failure((Status::new(403), SessionIdError::Invalid)),
-            _ => Outcome::Failure((Status::BadRequest, SessionIdError::BadCout)),
+        }else{
+            return Outcome::Failure((Status::NotAcceptable ,SessionIdError::Missing));
         }
     }
 }
