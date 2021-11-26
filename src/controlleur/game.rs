@@ -1,9 +1,9 @@
-use crate::{entity::game::{Connection, CurrentPlayerList, Map, MoveInfo}, service::game::{Attack, Move, Player, Position}};
+use crate::{entity::game::{Connection, CurrentPlayerList, Map, MoveInfo}, service::game::{map::Position, player::{Attack, Move, Player}}};
 use rocket::{State, http::Cookie, serde::{json::Json}};
 use rocket_okapi::{openapi, openapi_get_routes};
-use crate::Game;
 use crate::{service::id_verification::SessionId};
 use rocket::http::CookieJar;
+use crate::Game;
 
 pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     let settings = rocket_okapi::settings::OpenApiSettings::new();

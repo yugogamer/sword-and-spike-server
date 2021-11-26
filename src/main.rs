@@ -1,6 +1,7 @@
 #[macro_use] extern crate rocket;
 use rocket_okapi::{swagger_ui::*};
 use rocket::Request;
+use service::game::map::Map;
 use std::sync::RwLock;
 
 mod service;
@@ -15,7 +16,7 @@ fn not_found(req: &Request) -> String {
 
 
 struct Game {
-    pub game : RwLock<service::game::Map>
+    pub game : RwLock<Map>
 }
 
 
@@ -23,7 +24,7 @@ struct Game {
 
 #[rocket::main]
 async fn main() -> Result<(), rocket::Error> {
-    let game = Game {game : RwLock::new(service::game::Map::new())};
+    let game = Game {game : RwLock::new(Map::new())};
 
     let loader = rocket::build();
     let loader = controlleur::game::load_road(loader).manage(game).register("/",catchers![not_found]);

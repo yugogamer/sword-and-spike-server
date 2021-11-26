@@ -7,7 +7,7 @@ use rocket_okapi::request::{OpenApiFromRequest, RequestHeaderInput};
 
 use crate::Game;
 
-use super::game::Player;
+use super::game::player::Player;
 
 
 pub struct SessionId{pub id : u32}

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use rocket_okapi::okapi::schemars;
 use rocket_okapi::okapi::schemars::JsonSchema;
-use crate::service::game::{Case, MAP_HEIGHT, MAP_WIDTH, Player, Direction};
+use crate::service::game::{map::{Case, Direction, MAP_HEIGHT, MAP_WIDTH}, player::Player};
 
 
 
