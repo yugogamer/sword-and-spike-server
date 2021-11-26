@@ -20,6 +20,7 @@ pub struct Map{
     pub map : [[Case; MAP_WIDTH]; MAP_HEIGHT],
 }
 
-pub struct Move{
+#[derive(Serialize, Deserialize, JsonSchema)]
+pub struct MoveInfo{
     pub direction : Direction,
 }

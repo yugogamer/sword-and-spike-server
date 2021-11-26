@@ -1,8 +1,5 @@
 #[macro_use] extern crate rocket;
 use rocket_okapi::{swagger_ui::*};
-use service::game::Player;
-use crate::service::game::{Position};
-use std::sync::{Arc, Mutex};
 use rocket::Request;
 use std::sync::RwLock;
 

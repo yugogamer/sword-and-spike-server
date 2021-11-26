@@ -4,14 +4,13 @@ use rocket::request::{self, Request, FromRequest};
 use rocket::State;
 use rocket_okapi::okapi::openapi3::{Object, Parameter, ParameterValue};
 use rocket_okapi::request::{OpenApiFromRequest, RequestHeaderInput};
-use std::error::Error;
 
 use crate::Game;
 
 use super::game::Player;
 
 
-pub struct SessionId(u32);
+pub struct SessionId{pub id : u32}
 
 
 
@@ -46,7 +45,7 @@ impl<'r> FromRequest<'r> for SessionId{
             match value {
                 Ok(id) => {
                     if is_valid_id(&id, &current_players){
-                        return Outcome::Success(SessionId(id));
+                        return Outcome::Success(SessionId{id : id});
                     }else {
                         return Outcome::Failure((Status::Forbidden, SessionIdError::Invalid));
                     }
@@ -65,7 +64,7 @@ impl<'r> OpenApiFromRequest<'r> for SessionId{
 
     fn from_request_input(
         gen: &mut rocket_okapi::gen::OpenApiGenerator,
-        name: String,
+        _name: String,
         required: bool,
     ) -> rocket_okapi::Result<rocket_okapi::request::RequestHeaderInput> {
         let schema = gen.json_schema::<String>();

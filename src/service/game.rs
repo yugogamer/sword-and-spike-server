@@ -51,22 +51,15 @@ pub enum Case{
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 pub struct Attack{
-    player_id : u32,
-    direction : Direction,
+    pub player_id : u32,
+    pub direction : Direction,
 }
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone)]
 pub struct Move{
-    player_id : u32,
-    direction : Direction,
+    pub player_id : u32,
+    pub direction : Direction,
 }
-
-#[derive(Debug, Deserialize, Serialize)]
-pub enum Action{
-    Attack(Attack),
-    Move(Move)
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Map{
     pub array : [[Case ; MAP_WIDTH] ; MAP_HEIGHT ],

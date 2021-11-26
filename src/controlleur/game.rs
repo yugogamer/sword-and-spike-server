@@ -1,14 +1,13 @@
-use crate::{entity::game::{Connection, CurrentPlayerList, Map}, service::game::{Direction, Player}};
+use crate::{entity::game::{Connection, CurrentPlayerList, Map, MoveInfo}, service::game::{Attack, Move, Player, Position}};
 use rocket::{State, http::Cookie, serde::{json::Json}};
 use rocket_okapi::{openapi, openapi_get_routes};
 use crate::Game;
-use crate::Position;
-use crate::service::id_verification::SessionId;
+use crate::{service::id_verification::SessionId};
 use rocket::http::CookieJar;
 
 pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     let settings = rocket_okapi::settings::OpenApiSettings::new();
-    return loader.mount("/game/content", openapi_get_routes![settings: join_game, get_map, get_player_list, move_player]);
+    return loader.mount("/game/content", openapi_get_routes![settings: join_game, get_map, get_player_list, move_player, attack_player, run]);
 }
 
 /// # add a player to the game
@@ -63,6 +62,27 @@ async fn get_map(game : &State<Game>) -> Json<Map> {
 /// # move the current players
 #[openapi]
 #[post("/move", format = "json", data = "<movement>")]
-async fn move_player(game : &State<Game>, id: SessionId ,movement : Json<Direction> ) {
+async fn move_player(game : &State<Game>, id: SessionId ,movement : Json<MoveInfo> ) {
     let mut current_game = game.inner().game.write().unwrap();
+    let current_move = Move{ player_id: id.id, direction: movement.direction };
+
+    current_game.adding_move(current_move);
+}
+
+/// # define the next attech
+#[openapi]
+#[post("/attack", format = "json", data = "<movement>")]
+async fn attack_player(game : &State<Game>, id: SessionId ,movement : Json<MoveInfo> ) {
+    let mut current_game = game.inner().game.write().unwrap();
+    let current_attack = Attack{ player_id: id.id, direction: movement.direction };
+
+    current_game.adding_attack(current_attack);
+}
+
+/// # run a tick
+#[openapi]
+#[get("/run")]
+async fn run(game : &State<Game>) {
+    let mut current_game = game.inner().game.write().unwrap();
+    current_game.run();
 }
