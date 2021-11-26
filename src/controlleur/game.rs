@@ -1,9 +1,10 @@
 use crate::{entity::game::{Connection, CurrentPlayerList, Map}, service::game::{Direction, Player}};
-//use crate::service::authentification::generate_id;
-use rocket::{State, serde::{json::Json}};
+use rocket::{State, http::Cookie, serde::{json::Json}};
 use rocket_okapi::{openapi, openapi_get_routes};
 use crate::Game;
 use crate::Position;
+use crate::service::id_verification::SessionId;
+use rocket::http::CookieJar;
 
 pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     let settings = rocket_okapi::settings::OpenApiSettings::new();
@@ -13,7 +14,7 @@ pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocke
 /// # add a player to the game
 #[openapi]
 #[post("/join", format = "json", data = "<player>")]
-async fn join_game(game : &State<Game>, player : Json<Connection>) -> Json<Player> {
+async fn join_game(game : &State<Game>, player : Json<Connection> , cookies: &CookieJar<'_>) -> Json<Player> {
     let mut map = game.inner().game.write().unwrap();
     let player_name = player;
 
@@ -21,6 +22,16 @@ async fn join_game(game : &State<Game>, player : Json<Connection>) -> Json<Playe
     let response_player = new_player.clone();
     map.add_player(new_player);
     drop(map);
+
+
+    let session_id = response_player.id;
+    let cookie = Cookie::build("session-id", session_id.to_string())
+    .path("/")
+    .secure(true)
+    .finish();
+
+
+    cookies.add(cookie);
     return Json(response_player);
 }
 
@@ -52,6 +63,6 @@ async fn get_map(game : &State<Game>) -> Json<Map> {
 /// # move the current players
 #[openapi]
 #[post("/move", format = "json", data = "<movement>")]
-async fn move_player(game : &State<Game>, movement : Json<Direction> ) {
+async fn move_player(game : &State<Game>, id: SessionId ,movement : Json<Direction> ) {
     let mut current_game = game.inner().game.write().unwrap();
 }

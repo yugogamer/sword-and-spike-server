@@ -2,11 +2,14 @@ use rocket::http::Status;
 use rocket::outcome::Outcome;
 use rocket::request::{self, Request, FromRequest};
 use rocket::State;
+use rocket_okapi::okapi::openapi3::{Object, Parameter, ParameterValue};
+use rocket_okapi::request::{OpenApiFromRequest, RequestHeaderInput};
 use std::error::Error;
 
 use crate::Game;
 
 use super::game::Player;
+
 
 pub struct SessionId(u32);
 
@@ -53,5 +56,39 @@ impl<'r> FromRequest<'r> for SessionId{
         }else{
             return Outcome::Failure((Status::NotAcceptable ,SessionIdError::Missing));
         }
+    }
+}
+
+
+impl<'r> OpenApiFromRequest<'r> for SessionId{
+   
+
+    fn from_request_input(
+        gen: &mut rocket_okapi::gen::OpenApiGenerator,
+        name: String,
+        required: bool,
+    ) -> rocket_okapi::Result<rocket_okapi::request::RequestHeaderInput> {
+        let schema = gen.json_schema::<String>();
+        Ok(RequestHeaderInput::Parameter(Parameter {
+            name: "session-id".to_owned(),
+            location: "cookie".to_owned(),
+            description: Some(String::from("Current player id")),
+            required,
+            deprecated: false,
+            allow_empty_value: false,
+            value: ParameterValue::Schema {
+                style: None,
+                explode: None,
+                allow_reserved: false,
+                schema,
+                example: None,
+                examples: None,
+            },
+            extensions: Object::default(),
+        }))
+    }
+
+    fn get_responses(_gen: &mut rocket_okapi::gen::OpenApiGenerator) -> rocket_okapi::Result<rocket_okapi::okapi::openapi3::Responses> {
+        Ok(rocket_okapi::okapi::openapi3::Responses::default())
     }
 }
