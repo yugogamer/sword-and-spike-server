@@ -7,7 +7,7 @@ use rocket::http::CookieJar;
 
 pub fn load_road(loader : rocket::Rocket<rocket::Build>) -> rocket::Rocket<rocket::Build> {
     let settings = rocket_okapi::settings::OpenApiSettings::new();
-    return loader.mount("/game/content", openapi_get_routes![settings: join_game, get_map, get_player_list, move_player, attack_player, run]);
+    return loader.mount("/game/content", openapi_get_routes![settings: join_game, get_map, get_player_list, move_player, attack_player, run, get_current_player]);
 }
 
 /// # add a player to the game
@@ -45,6 +45,20 @@ async fn get_player_list(game : &State<Game>) -> Json<CurrentPlayerList> {
     drop(current_game);
 
     Json(CurrentPlayerList{data : player_list})
+}
+
+/// # get_player_list
+#[openapi]
+#[get("/player")]
+async fn get_current_player(game : &State<Game>, id: SessionId) -> Json<Player> {
+    let current_game = game.inner().game.read().unwrap();
+
+    let player = current_game.players.iter().find(|player| player.id == id.id);
+
+    match player {
+        Some(player) => return Json(player.clone()),
+        None => return Json(Player::new("error".to_string(), Position{x : 0, y : 0})),
+    }
 }
 
 /// # get the current map

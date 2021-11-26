@@ -17,8 +17,8 @@ pub enum Direction {
 
 #[derive(Debug, Deserialize, Serialize, Copy, Clone, JsonSchema)]
 pub struct  Position{
-    pub x : u32,
-    pub y : u32
+    pub x : i32,
+    pub y : i32
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, JsonSchema)]
@@ -71,6 +71,11 @@ pub struct Map{
 
 
 fn move_player(current_player : &mut Player, array : &[[Case ; MAP_WIDTH] ; MAP_HEIGHT ], new_pos : Position, players : Vec<Player>){
+
+    if new_pos.y < 0 || new_pos.x < 0 || new_pos.y > MAP_HEIGHT as i32 || new_pos.x > MAP_WIDTH as i32{
+        return
+    }
+
     let player_on_position = players.iter().find(|id|id.pos.x == new_pos.x && id.pos.y == new_pos.y);
 
     match player_on_position {
@@ -188,7 +193,7 @@ mod tests {
     #[test_case(1,  0, Direction::Down  ; "Down test")]
     #[test_case(0,  1, Direction::Left  ; "Left test")]
     #[test_case(2,  1, Direction::Right  ; "Right test")]
-    fn player_movement(x : u32, y : u32, direction : Direction) {
+    fn player_movement(x : i32, y : i32, direction : Direction) {
         let expected = Position{x : x, y : y};
 
         let mut game = Map::new();
@@ -205,7 +210,7 @@ mod tests {
     }
 
     #[test_case(1,  1, Direction::Up  ; "Up test")]
-    fn player_movement_player_on_top(x : u32, y : u32, direction : Direction) {
+    fn player_movement_player_on_top(x : i32, y : i32, direction : Direction) {
         let expected = Position{x : x, y : y};
 
         let mut game = Map::new();
